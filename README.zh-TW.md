@@ -4,8 +4,8 @@
 
 > 基於 [ebinf/lightbar2mqtt](https://github.com/ebinf/lightbar2mqtt)（MIT 授權，
 > © 2024 Erik Borowski）。這是一份獨立儲存庫，而非 GitHub fork——上游的完整開發
-> 歷史都保留在本儲存庫的根部（Erik Borowski 的 14 個 commit，一路回溯到最初那
-> 一個，見 `git log`），`LICENSE` 同時列出兩行著作權聲明。下方[本分支新增內容](#本分支新增內容)為新增段落；本文件其餘部分為上游
+> 歷史都保留在本儲存庫的根部——由 Erik Borowski 與其他上游貢獻者留下的全部 14 個
+> commit，一路回溯到最初那一個（見 `git log`），`LICENSE` 同時列出兩行著作權聲明。下方[本分支新增內容](#本分支新增內容)為新增段落；本文件其餘部分為上游
 > 對原始專案功能的原文文件，維持原樣，僅在上游段落中本分支有變動之處，以
 > `*（分支）*` 標示。
 

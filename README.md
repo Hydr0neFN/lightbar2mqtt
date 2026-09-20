@@ -4,9 +4,9 @@
 
 > Based on [ebinf/lightbar2mqtt](https://github.com/ebinf/lightbar2mqtt) (MIT,
 > © 2024 Erik Borowski). This is a standalone copy, not a GitHub fork — the
-> upstream history is preserved in full at the root of this repo (14 commits by
-> Erik Borowski, back to the initial one — see `git log`), and `LICENSE` carries
-> both copyright lines. [What this fork adds](#what-this-fork-adds)
+> upstream history is preserved in full at the root of this repo — all 14 commits
+> back to the initial one, by Erik Borowski and the other upstream contributors
+> (`git log`) — and `LICENSE` carries both copyright lines. [What this fork adds](#what-this-fork-adds)
 > below is new; the rest of this README is upstream's own documentation of the
 > base project, left as written, with `*(fork)*` markers added inline wherever
 > this fork changes something in an otherwise-upstream section.
