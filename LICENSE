@@ -1,6 +1,8 @@
 MIT License
 
 Copyright (c) 2024 Erik Borowski
+Copyright (c) 2026 Yu-I Juan (additions: sensors module, PlatformIO build,
+ESP32-C3 port, OTA support — see README.md for the split)
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal

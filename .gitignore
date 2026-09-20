@@ -1,3 +1,9 @@
 config.h
 .DS_Store
 .vscode
+
+# --- fork additions ---
+.pio/
+# Build artefacts. The credentials from config.h are compiled into
+# firmware.bin, so never commit these from a tree that had real secrets.
+dist/

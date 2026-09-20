@@ -110,6 +110,30 @@ void MQTT::publishLightbarState(Lightbar *lightbar){
     this->client->publish(stateTopic.c_str(), payload.c_str(), true);
 }
 
+// Added by this fork. Uses the streaming API rather than PubSubClient::publish()
+// on purpose: publish() refuses any message longer than its buffer, which
+// defaults to 256 bytes and is never enlarged anywhere in this project. The
+// Home Assistant discovery payloads are 650-900 bytes, so publish() would
+// simply return false and the entities would never appear, with nothing logged
+// anywhere to say why. beginPublish/print/endPublish streams straight to the
+// socket and has no such limit; it is what the discovery code above already
+// does for exactly this reason.
+uint32_t MQTT::getConnectCount()
+{
+    return this->connectCount;
+}
+
+bool MQTT::publish(const char *topic, const char *payload, bool retain)
+{
+    if (!this->client->connected())
+        return false;
+    size_t len = strlen(payload);
+    if (!this->client->beginPublish(topic, len, retain))
+        return false;
+    this->client->print(payload);
+    return this->client->endPublish() != 0;
+}
+
 void MQTT::setup()
 {
     Serial.print("[MQTT] Device ID: ");
@@ -118,6 +142,14 @@ void MQTT::setup()
     Serial.println(this->getCombinedRootTopic());
 
     this->client->setServer(this->mqttServer, this->mqttPort);
+    // PubSubClient defaults to a 15 s keepalive, which the broker enforces at
+    // 1.5x. Any WiFi stall longer than ~22 s therefore shows up as
+    // "exceeded timeout" and a reconnect. Nothing here needs sub-minute
+    // liveness detection, so the window is widened rather than left to trip
+    // on ordinary jitter.
+    this->client->setKeepAlive(60);
+    // Give a stalled socket a bounded time to fail instead of blocking loop().
+    this->client->setSocketTimeout(10);
     this->client->setCallback(std::bind(&MQTT::onMessage, this, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3));
 
     uint retries = 0;
@@ -136,7 +168,10 @@ void MQTT::setup()
         }
     }
 
-    Serial.println("[MQTT] connected!");
+    this->connectCount++;
+    Serial.print("[MQTT] connected! (connection #");
+    Serial.print(this->connectCount);
+    Serial.println(")");
     this->client->publish(String(this->getCombinedRootTopic() + "/availability").c_str(), "online", true);
     this->client->subscribe(String(this->getCombinedRootTopic() + "/+/command").c_str());
     this->client->subscribe(String(this->getCombinedRootTopic() + "/+/pair").c_str());

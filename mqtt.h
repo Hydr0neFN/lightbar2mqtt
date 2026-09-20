@@ -27,8 +27,17 @@ public:
     const String getCombinedRootTopic();
     const String getClientId();
     void publishLightbarState(Lightbar *lightbar);
+    // Added by this fork: the PubSubClient instance is private and there was no
+    // way to publish an arbitrary topic. Sensors reuse the existing connection
+    // and client id rather than opening a second one.
+    bool publish(const char *topic, const char *payload, bool retain);
+    // How many times setup() has completed a broker connection. The first is
+    // boot; every one after that is a reconnect, which is the metric that
+    // matters when the WiFi link is the suspect.
+    uint32_t getConnectCount();
 
 private:
+    uint32_t connectCount = 0;
     WiFiClient *wifiClient;
     PubSubClient *client;
     String clientId;
