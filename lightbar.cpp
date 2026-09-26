@@ -51,9 +51,15 @@ void Lightbar::sendRawCommand(Command command)
 void Lightbar::onOff()
 {
     onState = !onState;
-    // Switching on means the bar is asleep: hold the burst long enough for it to wake.
-    uint8_t repeats = onState ? constants::WAKE_SEND_REPEATS : constants::SEND_REPEATS;
-    this->radio->sendCommand(serial, Lightbar::Command::ON_OFF, 0x0, repeats);
+    if (onState)
+    {
+        // The bar is asleep. Wake it with a no-op under its own package id, because a toggle
+        // sent as the wake-up packet is swallowed, and sending ON twice would risk turning it
+        // back off.
+        this->sendRawCommand(Lightbar::Command::DIMMER, 0x0);
+        delay(constants::WAKE_DELAY_MS);
+    }
+    this->sendRawCommand(Lightbar::Command::ON_OFF);
 }
 
 void Lightbar::setOnOff(bool on)
