@@ -78,7 +78,7 @@ bool Radio::removeRemote(Remote *remote)
     return false;
 }
 
-void Radio::sendCommand(uint32_t serial, byte command, byte options)
+void Radio::sendCommand(uint32_t serial, byte command, byte options, uint8_t repeats)
 {
     PackageIdForSerial *package_id = nullptr;
     for (int i = 0; i < this->num_package_ids; i++)
@@ -128,12 +128,17 @@ void Radio::sendCommand(uint32_t serial, byte command, byte options)
     Serial.println();
 
     this->radio.stopListening();
-    for (int i = 0; i < 20; i++)
+    for (int i = 0; i < repeats; i++)
     {
         this->radio.write(&data, sizeof(data), true);
         delay(10);
     }
     this->radio.startListening();
+}
+
+void Radio::sendCommand(uint32_t serial, byte command, byte options)
+{
+    return this->sendCommand(serial, command, options, constants::SEND_REPEATS);
 }
 
 void Radio::sendCommand(uint32_t serial, byte command)

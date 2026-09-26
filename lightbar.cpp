@@ -51,7 +51,9 @@ void Lightbar::sendRawCommand(Command command)
 void Lightbar::onOff()
 {
     onState = !onState;
-    this->sendRawCommand(Lightbar::Command::ON_OFF);
+    // Switching on means the bar is asleep: hold the burst long enough for it to wake.
+    uint8_t repeats = onState ? constants::WAKE_SEND_REPEATS : constants::SEND_REPEATS;
+    this->radio->sendCommand(serial, Lightbar::Command::ON_OFF, 0x0, repeats);
 }
 
 void Lightbar::setOnOff(bool on)

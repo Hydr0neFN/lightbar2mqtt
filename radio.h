@@ -22,6 +22,7 @@ public:
     Radio(uint8_t ce, uint8_t csn);
     ~Radio();
     void setup();
+    void sendCommand(uint32_t serial, byte command, byte options, uint8_t repeats);
     void sendCommand(uint32_t serial, byte command, byte options);
     void sendCommand(uint32_t serial, byte command);
     void loop();
