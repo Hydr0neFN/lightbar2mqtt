@@ -34,7 +34,11 @@ constexpr int MAX_IRK = 4;
 constexpr int CACHE_SIZE = 24;
 
 MQTT *g_mqtt = nullptr;
-portMUX_TYPE g_mux = portMUX_INITIALIZER_UNLOCKED;
+// A FreeRTOS mutex, not a spinlock: the AES in resolveAddr() takes the hardware
+// AES lock and must not run inside a critical section.
+SemaphoreHandle_t g_mux = nullptr; // created in setup()
+#define LOCK() do { if (g_mux) xSemaphoreTake(g_mux, portMAX_DELAY); } while (0)
+#define UNLOCK() do { if (g_mux) xSemaphoreGive(g_mux); } while (0)
 bool g_enabled = true;
 bool g_started = false;
 uint32_t g_lastPublish = 0;
@@ -87,7 +91,7 @@ bool resolves(const uint8_t *key, const uint8_t *addrLE)
     return out[13] == addrLE[2] && out[14] == addrLE[1] && out[15] == addrLE[0];
 }
 
-// Caller holds g_mux.
+// Caller holds the mutex.
 int resolveAddr(const uint8_t *addrLE)
 {
     // Only resolvable private addresses: top two bits of the MSB are 01.
@@ -126,7 +130,7 @@ class ScanCb : public NimBLEScanCallbacks
         const int rssi = dev->getRSSI();
         const uint8_t *a = dev->getAddress().getVal();
         const bool apple = md.size() >= 3 && (uint8_t)md[0] == 0x4C && (uint8_t)md[1] == 0x00;
-        portENTER_CRITICAL(&g_mux);
+        LOCK();
         const int irk = g_irkCount ? resolveAddr(a) : -1;
         if (irk >= 0)
             g_irkAgg[irk].add(rssi);
@@ -137,7 +141,7 @@ class ScanCb : public NimBLEScanCallbacks
             if (t == 0x10 || t == 0x0C || t == 0x0F)
                 g_apple.add(rssi);
         }
-        portEXIT_CRITICAL(&g_mux);
+        UNLOCK();
     }
 };
 ScanCb g_cb;
@@ -189,7 +193,7 @@ void parseIrks(const char *s, unsigned int len)
             memcpy(tmp[count++], b, 16);
         // else: malformed token, skipped
     }
-    portENTER_CRITICAL(&g_mux);
+    LOCK();
     g_irkCount = count;
     for (int k = 0; k < count; k++)
     {
@@ -200,7 +204,7 @@ void parseIrks(const char *s, unsigned int len)
     memset(g_cache, 0, sizeof(g_cache));
     for (int k = 0; k < MAX_IRK; k++)
         g_irkAgg[k] = Agg();
-    portEXIT_CRITICAL(&g_mux);
+    UNLOCK();
     Serial.printf("[BLE] %d IRK(s) loaded\n", count);
 }
 } // namespace
@@ -208,6 +212,7 @@ void parseIrks(const char *s, unsigned int len)
 void setup(MQTT *mqtt)
 {
     g_mqtt = mqtt;
+    g_mux = xSemaphoreCreateMutex();
     if (ESP.getFreeHeap() < BLE_MIN_FREE_HEAP + 30000)
     {
         Serial.println("[BLE] not enough heap, scanner disabled");
@@ -281,7 +286,7 @@ void loop()
     Agg apple;
     Agg irk[MAX_IRK];
     int irkCount;
-    portENTER_CRITICAL(&g_mux);
+    LOCK();
     apple = g_apple;
     g_apple = Agg();
     irkCount = g_irkCount;
@@ -290,7 +295,7 @@ void loop()
         irk[k] = g_irkAgg[k];
         g_irkAgg[k] = Agg();
     }
-    portEXIT_CRITICAL(&g_mux);
+    UNLOCK();
 
     char buf[256];
     int len = snprintf(buf, sizeof(buf),
