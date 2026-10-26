@@ -2,6 +2,7 @@
 #include <esp_mac.h>
 
 #include "mqtt.h"
+#include "ble_presence.h"
 
 MQTT::MQTT(WiFiClient *wifiClient, const char *mqttServer, int mqttPort, const char *mqttUser, const char *mqttPassword, const char *mqttRootTopic, bool homeAssistantAutoDiscovery, const char *homeAssistantAutoDiscoveryPrefix)
 {
@@ -46,6 +47,10 @@ const String MQTT::getClientId()
 
 void MQTT::onMessage(char *topic, byte *payload, unsigned int length)
 {
+    // BLE presence topics (presence/#) are handled there, not as light bar commands.
+    if (blepresence::onMessage(topic, payload, length))
+        return;
+
     Serial.print("[MQTT] New Message (");
     Serial.print(topic);
     Serial.print("): ");
@@ -176,6 +181,11 @@ void MQTT::setup()
     this->client->subscribe(String(this->getCombinedRootTopic() + "/+/command").c_str());
     this->client->subscribe(String(this->getCombinedRootTopic() + "/+/pair").c_str());
     this->client->subscribe(String(this->getCombinedRootTopic() + "/+/toggle_internal").c_str());
+    {
+        static PubSubClient *subClient;
+        subClient = this->client;
+        blepresence::subscribe([](const char *t) { subClient->subscribe(t); });
+    }
 
     this->sendAllHomeAssistantDiscoveryMessages();
 

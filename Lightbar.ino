@@ -8,6 +8,7 @@
 #include "lightbar.h"
 #include "mqtt.h"
 #include "sensors.h"
+#include "ble_presence.h"
 #include "time.h"
 
 #ifdef OTA_PASSWORD
@@ -110,6 +111,9 @@ void setup()
   // and Sensors::setup() publishes its discovery messages immediately.
   sensors.setup();
 
+  // BLE presence scanner; last, so a failure here cannot hold up the light bar.
+  blepresence::setup(&mqtt);
+
   setupOta();
 }
 
@@ -176,6 +180,7 @@ void loop()
   // that way — radio.loop() polls the nRF24 for the remote's packets, and any
   // blocking I2C wait here would be dropped button presses.
   sensors.loop();
+  blepresence::loop();
 }
 
 void printLocalTime()
