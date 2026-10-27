@@ -3,6 +3,7 @@
 
 #include "mqtt.h"
 #include "ble_presence.h"
+#include "csi_presence.h"
 
 MQTT::MQTT(WiFiClient *wifiClient, const char *mqttServer, int mqttPort, const char *mqttUser, const char *mqttPassword, const char *mqttRootTopic, bool homeAssistantAutoDiscovery, const char *homeAssistantAutoDiscoveryPrefix)
 {
@@ -48,6 +49,9 @@ const String MQTT::getClientId()
 void MQTT::onMessage(char *topic, byte *payload, unsigned int length)
 {
     // BLE presence topics (presence/#) are handled there, not as light bar commands.
+    // CSI commands share the /cmd topic and must be tried first (BLE swallows presence/#).
+    if (csipresence::onMessage(topic, payload, length))
+        return;
     if (blepresence::onMessage(topic, payload, length))
         return;
 
@@ -187,6 +191,7 @@ void MQTT::setup()
         static PubSubClient *subClient;
         subClient = this->client;
         blepresence::subscribe([](const char *t) { subClient->subscribe(t); });
+        csipresence::subscribe([](const char *t) { subClient->subscribe(t); });
     }
 
     this->sendAllHomeAssistantDiscoveryMessages();

@@ -9,6 +9,7 @@
 #include "mqtt.h"
 #include "sensors.h"
 #include "ble_presence.h"
+#include "csi_presence.h"
 #include "time.h"
 
 #ifdef OTA_PASSWORD
@@ -19,6 +20,12 @@
 #define OTA_PORT 3232
 #endif
 #endif
+
+// Same node name as ble_presence.cpp (override both with -DBLE_NODE_NAME).
+#ifndef BLE_NODE_NAME
+#define BLE_NODE_NAME "pcdesk"
+#endif
+#define CSI_NODE_NAME BLE_NODE_NAME
 
 WiFiClient wifiClient;
 Radio radio(RADIO_PIN_CE, RADIO_PIN_CSN);
@@ -119,6 +126,10 @@ void setup()
 
   // BLE presence scanner; last, so a failure here cannot hold up the light bar.
   blepresence::setup(&mqtt);
+
+  // WiFi CSI sensing (csi_presence.cpp): pings the gateway and publishes per-second
+  // channel features to presence/<node>/csi. After BLE and OTA for the same reason.
+  csipresence::setup(CSI_NODE_NAME, [](const char *t, const char *p, bool r) { return mqtt.publish(t, p, r); });
 }
 
 void setupOta()
@@ -135,6 +146,7 @@ void setupOta()
     // then reboots, so loop() -- and with it the radio and the MQTT client --
     // simply stops being called. An nRF24 FIFO that overflows meanwhile costs
     // nothing, because those packets are for a firmware that is being replaced.
+    csipresence::setPaused(true); // stop the ping flood and CSI callbacks during the transfer
     Serial.println("[OTA] Update starting...");
   });
   ArduinoOTA.onEnd([]() {
@@ -144,6 +156,7 @@ void setupOta()
     Serial.printf("[OTA] %u%%\r", (progress * 100) / total);
   });
   ArduinoOTA.onError([](ota_error_t error) {
+    csipresence::setPaused(false);
     Serial.printf("[OTA] Error %u: ", error);
     switch (error)
     {
@@ -185,6 +198,7 @@ void loop()
   // blocking I2C wait here would be dropped button presses.
   sensors.loop();
   blepresence::loop();
+  csipresence::loop();
 }
 
 void printLocalTime()
