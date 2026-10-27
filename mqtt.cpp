@@ -153,6 +153,8 @@ void MQTT::setup()
     // liveness detection, so the window is widened rather than left to trip
     // on ordinary jitter.
     this->client->setKeepAlive(60);
+    // Inbound room-presence config (labelled IRK JSON) can exceed the 256 B default.
+    this->client->setBufferSize(512);
     // Give a stalled socket a bounded time to fail instead of blocking loop().
     this->client->setSocketTimeout(10);
     this->client->setCallback(std::bind(&MQTT::onMessage, this, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3));
