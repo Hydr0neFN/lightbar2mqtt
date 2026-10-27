@@ -40,7 +40,10 @@ void setupWifi()
   // 4 ms to 157 ms, and why MQTT keepalives and TCP ACKs get lost often enough
   // to produce a few hundred reconnects a day. The board is mains powered, so
   // the ~20 mA saved buys nothing and costs the link.
-  WiFi.setSleep(false);
+  // BLE presence scanning (ble_presence.cpp) needs WiFi modem sleep: the
+  // WiFi/BT coexistence code aborts when the BLE controller starts with
+  // WIFI_PS_NONE. So the latency fix above is traded away on this branch.
+  WiFi.setSleep(WIFI_PS_MIN_MODEM);
   // Never let the ESP negotiate a lower rate than it has to; also stops the
   // station from wandering when the AP is marginal.
   WiFi.setAutoReconnect(true);
@@ -111,10 +114,11 @@ void setup()
   // and Sensors::setup() publishes its discovery messages immediately.
   sensors.setup();
 
+  // OTA first: if the BLE scanner ever misbehaves the device can still be reflashed.
+  setupOta();
+
   // BLE presence scanner; last, so a failure here cannot hold up the light bar.
   blepresence::setup(&mqtt);
-
-  setupOta();
 }
 
 void setupOta()

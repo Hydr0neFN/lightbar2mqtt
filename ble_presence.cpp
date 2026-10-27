@@ -3,6 +3,7 @@
 #include <NimBLEDevice.h>
 #include <mbedtls/aes.h>
 #include <string.h>
+#include <esp_system.h>
 
 #include "mqtt.h"
 
@@ -167,31 +168,33 @@ int hexNib(char c)
     return -1;
 }
 
-// Parses "irk1,irk2,..." (32 hex chars each, any non-hex separator).
+// Parses IRKs: every 32 hex nibbles make one key; any other character (comma,
+// space, colon, newline) is a separator and "0x" prefixes are ignored.
 void parseIrks(const char *s, unsigned int len)
 {
     uint8_t tmp[MAX_IRK][16];
     int count = 0;
-    unsigned int i = 0;
-    while (i < len && count < MAX_IRK)
+    int n = 0;
+    uint8_t b[16];
+    for (unsigned int i = 0; i < len && count < MAX_IRK; i++)
     {
-        while (i < len && hexNib(s[i]) < 0)
-            i++;
-        int n = 0;
-        uint8_t b[16];
-        while (i < len && hexNib(s[i]) >= 0 && n < 32)
+        if (s[i] == '0' && i + 1 < len && (s[i + 1] == 'x' || s[i + 1] == 'X') && n % 2 == 0)
         {
-            const int v = hexNib(s[i]);
-            if (n % 2 == 0)
-                b[n / 2] = v << 4;
-            else
-                b[n / 2] |= v;
-            n++;
-            i++;
+            i++; // skip the "0x" prefix
+            continue;
         }
-        if (n == 32)
+        const int v = hexNib(s[i]);
+        if (v < 0)
+            continue;
+        if (n % 2 == 0)
+            b[n / 2] = v << 4;
+        else
+            b[n / 2] |= v;
+        if (++n == 32)
+        {
             memcpy(tmp[count++], b, 16);
-        // else: malformed token, skipped
+            n = 0;
+        }
     }
     LOCK();
     g_irkCount = count;
@@ -213,6 +216,14 @@ void setup(MQTT *mqtt)
 {
     g_mqtt = mqtt;
     g_mux = xSemaphoreCreateMutex();
+    // Never let the BLE controller put the board in a boot loop: after a panic or
+    // watchdog reset the scanner stays off until the next clean boot.
+    const esp_reset_reason_t why = esp_reset_reason();
+    if (why == ESP_RST_PANIC || why == ESP_RST_TASK_WDT || why == ESP_RST_INT_WDT || why == ESP_RST_WDT)
+    {
+        Serial.println("[BLE] previous reset was a crash, scanner disabled this boot");
+        return;
+    }
     if (ESP.getFreeHeap() < BLE_MIN_FREE_HEAP + 30000)
     {
         Serial.println("[BLE] not enough heap, scanner disabled");
@@ -275,12 +286,14 @@ void loop()
 
     // Keep the scan alive, and drop it when memory is short.
     NimBLEScan *scan = NimBLEDevice::getScan();
-    if (g_enabled && ESP.getFreeHeap() < BLE_MIN_FREE_HEAP)
+    // Stop below BLE_MIN_FREE_HEAP, restart only 10 kB above it (no flapping).
+    const uint32_t freeHeap = ESP.getFreeHeap();
+    if (g_enabled && freeHeap < BLE_MIN_FREE_HEAP)
     {
         if (scan->isScanning())
             scan->stop();
     }
-    else if (g_enabled && !scan->isScanning())
+    else if (g_enabled && !scan->isScanning() && freeHeap > BLE_MIN_FREE_HEAP + 10000)
         startScan();
 
     Agg apple;
