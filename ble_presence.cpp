@@ -469,7 +469,7 @@ void setup(MQTT *mqtt)
     // Never let the BLE controller put the board in a boot loop: after a panic or
     // watchdog reset the scanner stays off until the next clean boot.
     const esp_reset_reason_t why = esp_reset_reason();
-    if (why == ESP_RST_PANIC || why == ESP_RST_TASK_WDT || why == ESP_RST_INT_WDT || why == ESP_RST_WDT)
+    if (why == ESP_RST_PANIC || why == ESP_RST_BROWNOUT || why == ESP_RST_TASK_WDT || why == ESP_RST_INT_WDT || why == ESP_RST_WDT)
     {
         Serial.println("[BLE] previous reset was a crash, scanner disabled this boot");
         return;
@@ -479,7 +479,12 @@ void setup(MQTT *mqtt)
         Serial.println("[BLE] not enough heap, scanner disabled");
         return;
     }
-    NimBLEDevice::init("");
+    if (!NimBLEDevice::init(""))
+    {
+        Serial.printf("[BLE] init failed, scanner disabled (free heap %u)\n", ESP.getFreeHeap());
+        NimBLEDevice::deinit(true);
+        return;
+    }
     g_started = true;
     if (g_enabled)
         startScan();
