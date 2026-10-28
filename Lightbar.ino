@@ -1,5 +1,6 @@
 #include <WiFi.h>
 #include <SPI.h>
+#include <esp_task_wdt.h>
 
 #include "constants.h"
 #include "config.h"
@@ -80,9 +81,16 @@ void setupWifi()
   #endif
 }
 
+// loop() must come around at least this often. A NimBLE stop()/deinit() that wedges (host task stuck) blocks
+// loop() forever; the idle-task WDT never fires for a blocked task, so subscribe loopTask itself. The panic
+// reset is seen as a crash by ble_presence (deferred scanner start). Fed from OTA progress too.
+#define LOOP_WDT_S 120
+
 void setup()
 {
   Serial.begin(115200);
+  esp_task_wdt_init(LOOP_WDT_S, true);
+  esp_task_wdt_add(NULL);
   Serial.println("##########################################");
   Serial.println("# LIGHTBAR2MQTT            (Version " + constants::VERSION + ") #");
   Serial.println("# https://github.com/ebinf/lightbar2mqtt #");
@@ -153,6 +161,7 @@ void setupOta()
     Serial.println("\n[OTA] Done, rebooting...");
   });
   ArduinoOTA.onProgress([](unsigned int progress, unsigned int total) {
+    esp_task_wdt_reset();
     Serial.printf("[OTA] %u%%\r", (progress * 100) / total);
   });
   ArduinoOTA.onError([](ota_error_t error) {
@@ -178,6 +187,7 @@ void setupOta()
 
 void loop()
 {
+  esp_task_wdt_reset();
   if (!WiFi.isConnected())
   {
     Serial.println("[WiFi] connection lost!");
