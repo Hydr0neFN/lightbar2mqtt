@@ -52,6 +52,12 @@ void setupWifi()
   // WiFi/BT coexistence code aborts when the BLE controller starts with
   // WIFI_PS_NONE. So the latency fix above is traded away on this branch.
   WiFi.setSleep(WIFI_PS_MIN_MODEM);
+#ifdef WIFI_TX_POWER
+  // Optional cap (config.h, e.g. WIFI_POWER_8_5dBm): a board next to its AP does not need
+  // 20 dBm, and the transmit current peaks are what trips the brownout detector on a weak
+  // supply (the CSI pings transmit 25 times a second).
+  WiFi.setTxPower(WIFI_TX_POWER);
+#endif
   // Never let the ESP negotiate a lower rate than it has to; also stops the
   // station from wandering when the AP is marginal.
   WiFi.setAutoReconnect(true);
@@ -67,6 +73,9 @@ void setupWifi()
   }
   Serial.println();
   Serial.println("[WiFi] connected!");
+#ifdef WIFI_TX_POWER
+  WiFi.setTxPower(WIFI_TX_POWER); // again: the first call can be too early on some cores
+#endif
 
   Serial.print("[WiFi] IP address: ");
   Serial.println(WiFi.localIP());
