@@ -21,7 +21,7 @@ ESP32 的接腳圖！
 | MOSI  | Pin 23 |
 | MISO  | Pin 19 |
 
-本分支所使用的 ESP32-C3 接腳配置不同，見[ESP32-C3 移植](esp32-c3-port.zh-TW.md)。
+本分支用的 ESP32-C3 接腳配置不同，見[ESP32-C3 移植](esp32-c3-port.zh-TW.md)。
 
 ## 2. 軟體
 
@@ -45,7 +45,7 @@ PlatformIO，見 [PlatformIO 建置](platformio-build.zh-TW.md)。
 7. 此時你大概還不知道遙控器的序號。只要按壓／轉動遙控器，就能在序列埠監控視窗中看到序號（例如：`[Radio] Ignoring package with not matching serial: 0x7B7E12`）。將它複製並貼到 `config.h` 檔案中的「Remotes」區段。
 8. 再次上傳程式碼。
 9. 若你的 Home Assistant 已設定好 MQTT 整合，燈條應會自動被探索到。
-10. 開始享受透過 MQTT 控制你的燈條吧！
+10. 開始用 MQTT 控制你的燈條吧！
 
 ## 3. 配對燈條與 ESP32（選用）
 

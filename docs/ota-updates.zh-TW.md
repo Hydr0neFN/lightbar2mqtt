@@ -10,12 +10,12 @@
 **這一條是安全性問題，別把它當成形式上的免責聲明：**這份韌體會把 WiFi 密碼（PSK）與
 MQTT 密碼直接編譯進映像檔裡。這也是為什麼 `dist/`（建置出來的 `firmware.bin`
 所在位置）會被列入 `.gitignore`（見 `.gitignore`）：只要 `config.h` 中含有
-真實金鑰，從該工作目錄建置出的任何產出物，都會把這兩組金鑰以可被還原提取的
+真實金鑰，從該工作目錄建置出的任何產出物，都會把這兩組金鑰以能被還原出來的
 形式，帶入任何分享出去的檔案裡。未經身分驗證的 OTA 連接埠，同樣會把這兩組
 金鑰交給區域網路上的任何人——這就是為什麼一旦啟用 OTA，`OTA_PASSWORD` 就是
 必要項目，沒有它不行。
 
-透過 `esp32-c3-pro-mini-ota` 這個 PlatformIO 環境燒錄：
+用 `esp32-c3-pro-mini-ota` 這個 PlatformIO 環境燒錄：
 
 ```sh
 pio run -e esp32-c3-pro-mini-ota -t upload
@@ -32,5 +32,5 @@ setx LIGHTBAR_OTA_PASSWORD "<same value as OTA_PASSWORD in config.h>"
 ```
 
 `espota` 會讓裝置反過來對主機開啟一條 TCP 連線，使用固定連接埠（`3233`），
-而 Windows 防火牆預設會擋下這條連線——一次性所需的 `New-NetFirewallRule`
+而 Windows 防火牆預設會擋下這條連線——只需跑一次的 `New-NetFirewallRule`
 指令，請見 `platformio.ini` 中的註解。

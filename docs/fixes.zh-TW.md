@@ -11,9 +11,9 @@
 （而非只跑過一次開發週期）後才發現並修正的：
 
 - **`WiFi.setSleep(false)`**——modem sleep（ESP32 預設行為）會在 DTIM
-  beacon 之間讓無線電暫停運作，這正是為什麼 ping 延遲會在 4 毫秒到 157
-  毫秒之間大幅擺動，也是為什麼 MQTT 心跳（keepalive）與 TCP ACK 經常遺失到
-  足以每天造成數百次重新連線的地步。這片板子是以市電供電，睡眠模式所省下的
+  beacon 之間讓無線電暫停運作，所以 ping 延遲才會在 4 毫秒到 157
+  毫秒之間大幅擺動，MQTT 心跳（keepalive）與 TCP ACK 也才會常常掉，掉到
+  每天要重新連線好幾百次。這片板子是以市電供電，睡眠模式省下的
   約 20 mA 完全划不來這樣的代價。搭配 `WiFi.setAutoReconnect(true)` 一起使用。
 - **MQTT 心跳時間放寬至 60 秒**，socket timeout 設為 10 秒
   （`mqtt.cpp`）——PubSubClient 預設的 15 秒心跳，大多數 broker 會以 1.5 倍
@@ -50,7 +50,7 @@
 
 本分支的修正方式（見 `remote.cpp:59` 的註解）是把這個既有的實際行為明確
 寫出來，而不是嘗試恢復一個 `std::function` 本來就沒有對應運算子可用的
-比較邏輯。這個作法對唯一的呼叫端（`MQTT::removeRemote()`）而言是正確的，
+比較邏輯。這個作法用在唯一的呼叫端（`MQTT::removeRemote()`）上是正確的，
 因為它針對每個遙控器都只會註冊剛好一個監聽器。如果日後同一個遙控器需要
 註冊第二個監聽器，就需要一套真正的識別機制——例如讓
 `registerCommandListener()` 回傳一個 token——而不是再次嘗試比較這些

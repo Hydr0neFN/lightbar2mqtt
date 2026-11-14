@@ -81,7 +81,7 @@ ESP32 會將自己的上線狀態傳送到以下主題：
 
 ## Home Assistant
 
-若你的 Home Assistant 已設定好 MQTT 整合，燈條與遙控器應會自動被探索到。
+若你的 Home Assistant 已設定好 MQTT 整合，Home Assistant 應會自動找到燈條與遙控器。
 
 - 燈條會以 `light` 實體呈現
 - 遙控器會以 `sensor` 實體呈現

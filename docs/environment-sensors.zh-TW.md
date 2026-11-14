@@ -14,11 +14,11 @@
   控制節奏（`SENSOR_UPDATE_INTERVAL_MS`，預設 60 秒），開機時唯一會阻塞的呼叫
   是 SCD41 的 `stopPeriodicMeasurement()`（約 500 毫秒）；其餘部分都會立即返回。
 - BME280 的氣壓讀數會提供給 SCD41 使用（`setAmbientPressure()`），因為 NDIR
-  CO2 量測本身會受氣壓影響——這正是這兩顆感測器共用同一條匯流排，而非各自獨立
+  CO2 量測本身會受氣壓影響——這正是這兩顆感測器要共用同一條匯流排、不各自獨立
   存在的原因。
 - BME280 會同時嘗試 `0x76` 與 `0x77` 這兩個位址，因為不同廠牌的擴充板依 `SDO`
   接腳的接法不同，位址也會不同。
-- `SENSOR_SCD4X_TEMP_OFFSET` 用來補償 SCD41 緊鄰 WiFi SoC 所產生的自我發熱效應（預設
+- `SENSOR_SCD4X_TEMP_OFFSET` 用來補償 SCD41 緊鄰 WiFi SoC 產生的自我發熱效應（預設
   4°C，即 Sensirion 原廠預設值）；實際數值取決於外殼結構，需要就地調校。感測器
   自身的溫度／濕度，以及與 BME280 讀數之間的差值（`t_delta`），都會以診斷用實體
   發布，目的就是讓調校時有資料可看。
