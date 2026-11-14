@@ -16,7 +16,7 @@ fork：上游的完整開發歷史都留在本儲存庫的根部，由 Erik Boro
 
 | | |
 | :---- | :---- |
-| **問題** | 燈條只講自己的 2.4 GHz nRF24 協定。沒有 WiFi、沒有 MQTT，Home Assistant 看不到也控制不了。 |
+| **問題** | 燈條只聽它自己的 nRF24 遙控器。要從 MQTT 和 Home Assistant 控制它，需要一個橋接器。 |
 | **我做了什麼** | 用一片 ESP32-C3 當橋樑：MQTT 指令進來、nRF24 封包出去；原廠遙控器的封包也接回來，改走 MQTT 發布。同一片板子還能選配 BME280 + SCD41 房間感測器。 |
 | **結果** | 部署現場量到的數字：ping 延遲在 4 到 157 ms 之間來回，一天對 broker 重連約 300 次——下面的修正就是從這些數字來的。感測器預設每 60 秒發布一次。 |
 | **技術堆疊** | ESP32 / ESP32-C3、Arduino C++、PlatformIO、nRF24L01、MQTT、Home Assistant、BME280 + Sensirion SCD41（I2C）。 |

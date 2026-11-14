@@ -17,7 +17,7 @@ marked *(fork)*; the rest documents upstream's base project as it was written.
 
 | | |
 | :---- | :---- |
-| **Problem** | The light bar speaks only a 2.4 GHz nRF24 protocol of its own. No WiFi, no MQTT, nothing Home Assistant can see or drive. |
+| **Problem** | The light bar is controlled by its own nRF24 remote. To drive it from MQTT and Home Assistant you need a bridge. |
 | **What I built** | A bridge on an ESP32-C3: MQTT commands in, nRF24 packets out, the original remote's packets back out over MQTT, plus an optional BME280 + SCD41 room-sensor device on the same board. |
 | **Result** | Live diagnostics on the deployment: ping latency swung 4 ms to 157 ms and the board reconnected to the broker about 300 times a day — those are the numbers the fixes below came from. Sensor publish every 60 s by default. |
 | **Stack** | ESP32 / ESP32-C3, Arduino C++, PlatformIO, nRF24L01, MQTT, Home Assistant, BME280 + Sensirion SCD41 on I2C. |
